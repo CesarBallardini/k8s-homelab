@@ -1,0 +1,6 @@
+---
+- name: provision minikube cluster
+  hosts: minikube
+
+  tasks:
+    - include_tasks: devops_docker.yml
