@@ -32,6 +32,14 @@ URLS:
 POST_UP_MESSAGE
 
 
+$start_minikube = <<-SCRIPT
+  minikube start
+  docker --version
+  kubectl version --output=json | jq "."
+SCRIPT
+
+
+
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   config.vm.post_up_message = $post_up_message
@@ -84,8 +92,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
     srv.vm.provider :virtualbox do |vb|
       vb.gui = false
-      vb.cpus = 2
-      vb.memory = "2048"
+      vb.cpus = 4
+      vb.memory = "8196"
       vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
 
       # https://www.virtualbox.org/manual/ch08.html#vboxmanage-modifyvm mas parametros para personalizar en VB
@@ -188,7 +196,15 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             echo minikube cluster already initialized
           else
             newgrp docker << NEWGROUP
-            minikube start --driver=docker 2>minikube-start-error.log
+
+            # minimun RAM: 2gb
+            # --kubernetes-version=v1.20.2 if absent, uses latest version
+            minikube start \
+              --driver=docker \
+              --kubernetes-version=v1.20.2 \
+              --memory=7900 \
+              --cpus=4 \
+              2>minikube-start-error.log
 NEWGROUP
           fi
 
@@ -212,8 +228,8 @@ NEWGROUP
         SHELL
     end
 
-    config.trigger.after :up do |trigger|
+    config.trigger.after [ :up , :reload ] do |trigger|
       trigger.name = 'start-minikube'
-      trigger.run_remote = {inline: "su --login --command='minikube start' vagrant "}
+      trigger.run_remote = { privileged: false, inline: $start_minikube }
     end
 end
