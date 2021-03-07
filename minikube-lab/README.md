@@ -192,7 +192,98 @@ kubectl logs mongo-depl-5fd6b7d4b4-lxjzn
 kubectl exec -it mongo-depl-5fd6b7d4b4-lxjzn -- /bin/bash
 # an interactive terminal on the mongo container
 
+
+kubectl delete deployment mongo-depl
+
+# pods in deployment terminate
+kubectl get pod
+kubectl get replicaset
+
+# all CRUD happens at the deployment level
+
 ```
+
+## K8s configuration files
+
+`kubctl apply` command takes a file config as a parameter and does what's in there.
+
+
+let's create a config file, named `/vagrant/nginx-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 1
+  selector:
+     matchLabels:
+       app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.16
+        ports:
+        - containerPort: 80
+
+```
+
+
+```bash
+kubctl apply -f /vagrant/nginx-deployment.yaml
+# deployment.apps/nginx-deployment created
+```
+
+
+```
+kubectl get deployment
+# NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+# nginx-deployment   1/1     1            1           62s
+
+
+kubectl get replicaset
+# NAME                          DESIRED   CURRENT   READY   AGE
+# nginx-deployment-644599b9c9   1         1         1       68s
+
+
+kubectl get pod
+# NAME                                READY   STATUS    RESTARTS   AGE
+# nginx-deployment-644599b9c9-ztngj   1/1     Running   0          43s
+
+```
+
+To change anything in the deployment, I can change my local config file, i.e. edit the file and change replicas to 2.
+
+then `kubectl apply` and the result is:
+
+```bash
+
+kubectl get deployment
+# NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+# nginx-deployment   2/2     2            2           5m27s
+
+
+kubectl get replicaset
+# NAME                          DESIRED   CURRENT   READY   AGE
+# nginx-deployment-644599b9c9   2         2         2       5m30s
+
+
+kubectl get pod
+# NAME                                READY   STATUS    RESTARTS   AGE
+# nginx-deployment-644599b9c9-n2lwl   1/1     Running   0          13s
+# nginx-deployment-644599b9c9-ztngj   1/1     Running   0          5m33s
+
+```
+
+## YAML Config file
+
 
 
 # References
